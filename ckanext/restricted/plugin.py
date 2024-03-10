@@ -25,6 +25,7 @@ class RestrictedPlugin(plugins.SingletonPlugin, DefaultTranslation):
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IAuthFunctions)
+    plugins.implements(plugins.IDatasetForm, inherit=False)
     # plugins.implements(plugins.IRoutes, inherit=True)
     plugins.implements(plugins.IBlueprint, inherit=True)
     plugins.implements(plugins.IResourceController, inherit=True)
@@ -79,3 +80,33 @@ class RestrictedPlugin(plugins.SingletonPlugin, DefaultTranslation):
     # IValidators
     def get_validators(self):
         return {'restricted_username_from_mail': validation.restricted_username_from_mail}
+
+    # IDatasetForm
+    def is_fallback(self):
+        return False
+
+    def package_types(self):
+        return []
+
+    def _modify_package_schema(self, schema):
+        # Add our custom document_type metadata field to the schema.
+        schema['resources'].update({
+            'restricted_level': [toolkit.get_validator('ignore_missing'),],
+            'restricted_allowed_users': [toolkit.get_validator('ignore_missing'),],
+        })
+        return schema
+
+    def create_package_schema(self):
+        schema = super(RestrictedPlugin, self).create_package_schema()
+        schema = self._modify_package_schema(schema)
+        return schema
+
+    def update_package_schema(self):
+        schema = super(RestrictedPlugin, self).update_package_schema()
+        schema = self._modify_package_schema(schema)
+        return schema
+
+    def show_package_schema(self):
+        schema = super(RestrictedPlugin, self).show_package_schema()
+        schema = self._modify_package_schema(schema)
+        return schema
